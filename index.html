@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Desafio JK — 50 Anos em 5</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:linear-gradient(135deg,#071952,#088395);color:#fff;min-height:100vh}
+.container{width:min(900px,92%);margin:auto;padding:28px 0 50px}
+.card{background:rgba(255,255,255,.97);color:#172033;border-radius:24px;padding:30px;box-shadow:0 18px 50px rgba(0,0,0,.25)}
+.hidden{display:none}
+.logo{font-size:3.5rem;text-align:center}
+h1{text-align:center;margin:8px 0;color:#071952;font-size:clamp(2rem,6vw,3.5rem)}
+.subtitle{text-align:center;color:#526074;font-size:1.1rem;line-height:1.5}
+.badges{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:22px 0}
+.badge{background:#e9f8fb;color:#087383;padding:9px 13px;border-radius:999px;font-weight:bold}
+.btn{border:0;border-radius:14px;padding:14px 22px;font-size:1rem;font-weight:bold;cursor:pointer;transition:.2s}
+.btn:hover{transform:translateY(-2px)}
+.primary{background:#088395;color:white;width:100%;margin-top:12px}
+.secondary{background:#e8eef7;color:#172033}
+.top{display:flex;justify-content:space-between;gap:15px;align-items:center;margin-bottom:18px;flex-wrap:wrap}
+.progress-wrap{height:10px;background:#e5eaf0;border-radius:20px;overflow:hidden;margin-bottom:25px}
+.progress{height:100%;background:#f4b400;width:0%;transition:.3s}
+.info{display:flex;gap:12px;flex-wrap:wrap}
+.pill{padding:9px 13px;border-radius:12px;background:#f2f5f8;font-weight:bold}
+.timer.warning{color:#c62828}
+.category{color:#088395;font-weight:bold;text-transform:uppercase;letter-spacing:.08em;font-size:.85rem}
+.question{font-size:1.55rem;line-height:1.35;margin:12px 0 22px}
+.options{display:grid;gap:12px}
+.option{width:100%;text-align:left;border:2px solid #dfe6ee;background:white;border-radius:15px;padding:16px;font-size:1rem;cursor:pointer}
+.option:hover:not(:disabled){border-color:#088395;background:#f0fbfc}
+.option.correct{border-color:#2e9b55;background:#e9f8ed}
+.option.wrong{border-color:#d64545;background:#fff0f0}
+.option:disabled{cursor:default}
+.feedback{margin-top:15px;padding:15px;border-radius:14px;line-height:1.5;background:#f3f6fa}
+.next{margin-top:15px;width:100%}
+.result{text-align:center}
+.score{font-size:4rem;font-weight:900;color:#088395;margin:15px 0}
+.rank{font-size:1.25rem;font-weight:bold;color:#071952}
+.summary{text-align:left;background:#f5f7fa;padding:18px;border-radius:16px;margin-top:20px}
+.small{font-size:.9rem;color:#687386}
+.footer{text-align:center;margin-top:18px;color:rgba(255,255,255,.8);font-size:.85rem}
+#confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden}
+.conf{position:absolute;width:9px;height:14px;animation:fall 2.4s linear forwards}
+@keyframes fall{to{transform:translateY(105vh) rotate(720deg);opacity:0}}
+@media(max-width:600px){.card{padding:21px}.question{font-size:1.25rem}.logo{font-size:2.7rem}}
+</style>
+</head>
+<body>
+<div id="confetti"></div>
+<div class="container">
+  <section id="start" class="card">
+    <div class="logo">🇧🇷📚</div>
+    <h1>DESAFIO JK</h1>
+    <p class="subtitle"><strong>50 Anos em 5</strong><br>Governo Juscelino Kubitschek — 1956–1961</p>
+    <div class="badges">
+      <span class="badge">10 perguntas</span>
+      <span class="badge">4 alternativas</span>
+      <span class="badge">Cronômetro</span>
+      <span class="badge">Pontuação</span>
+    </div>
+    <p class="subtitle">Teste seus conhecimentos sobre o Plano de Metas, Brasília, industrialização, infraestrutura e os desafios econômicos do período.</p>
+    <button class="btn primary" onclick="startQuiz()">COMEÇAR QUIZ 🚀</button>
+  </section>
+
+  <section id="quiz" class="card hidden">
+    <div class="top">
+      <div class="info">
+        <span class="pill" id="counter">Pergunta 1/10</span>
+        <span class="pill" id="score">Pontos: 0</span>
+      </div>
+      <span class="pill timer" id="timer">⏱️ 20s</span>
+    </div>
+    <div class="progress-wrap"><div class="progress" id="progress"></div></div>
+    <div class="category" id="category"></div>
+    <div class="question" id="question"></div>
+    <div class="options" id="options"></div>
+    <div id="feedback" class="feedback hidden"></div>
+    <button id="next" class="btn primary next hidden" onclick="nextQuestion()">PRÓXIMA PERGUNTA →</button>
+  </section>
+
+  <section id="result" class="card hidden result">
+    <div class="logo">🏆</div>
+    <h1>QUIZ CONCLUÍDO!</h1>
+    <div class="score" id="finalScore">0/10</div>
+    <div class="rank" id="rank"></div>
+    <p class="subtitle" id="message"></p>
+    <div class="summary" id="summary"></div>
+    <button class="btn primary" onclick="restartQuiz()">JOGAR NOVAMENTE 🔄</button>
+    <button class="btn secondary" onclick="showStart()" style="margin-top:10px;width:100%">VOLTAR AO INÍCIO</button>
+  </section>
+
+  <div class="footer">Ferramenta pedagógica — Governo Juscelino Kubitschek (1956–1961)</div>
+</div>
+
+<script>
+const questions = [
+ {cat:"Plano de Metas",q:"Qual expressão ficou associada ao projeto de desenvolvimento do governo Juscelino Kubitschek?",a:["“50 anos em 5”","“Brasil, ame-o ou deixe-o”","“O petróleo é nosso”","“Ordem e Progresso”"],c:0,e:"A expressão “50 anos em 5” sintetizava a proposta de acelerar o desenvolvimento do país durante o mandato."},
+ {cat:"Plano de Metas",q:"Qual alternativa apresenta setores contemplados pelo Plano de Metas?",a:["Energia e transportes","Turismo e cinema apenas","Defesa e mineração apenas","Esporte e artes apenas"],c:0,e:"O Plano de Metas concentrou investimentos em áreas como energia, transportes, alimentação, indústria de base e educação."},
+ {cat:"Brasília",q:"Em que ano Brasília foi inaugurada durante o governo JK?",a:["1960","1956","1961","1964"],c:0,e:"Brasília foi inaugurada em 21 de abril de 1960, durante o governo de Juscelino Kubitschek."},
+ {cat:"Brasília",q:"Qual era uma das funções políticas da construção de Brasília?",a:["Transferir a capital federal para o interior","Transformar São Paulo em capital","Criar uma nova capital no litoral","Encerrar a administração federal"],c:0,e:"A construção de Brasília concretizou a transferência da capital federal do Rio de Janeiro para o interior do país."},
+ {cat:"Industrialização",q:"Uma característica marcante da política econômica de JK foi:",a:["Incentivo à industrialização","Abandono da indústria de base","Redução dos investimentos em infraestrutura","Fim da entrada de empresas estrangeiras"],c:0,e:"O período foi marcado pelo estímulo à industrialização e por investimentos em infraestrutura, com participação de capital estrangeiro."},
+ {cat:"Indústria automobilística",q:"Qual setor industrial recebeu forte impulso durante o governo JK?",a:["Indústria automobilística","Indústria naval de lazer","Indústria de brinquedos apenas","Indústria de instrumentos musicais"],c:0,e:"A indústria automobilística se expandiu no período, ligada à estratégia de industrialização e aos investimentos em infraestrutura rodoviária."},
+ {cat:"Transportes",q:"Qual modal de transporte recebeu grande atenção na estratégia de infraestrutura de JK?",a:["Rodoviário","Apenas fluvial","Apenas aéreo","Apenas ferroviário"],c:0,e:"A expansão das rodovias foi uma característica importante da estratégia de integração e desenvolvimento do período."},
+ {cat:"Economia",q:"Além do crescimento e da industrialização, qual desafio econômico marcou o período de JK?",a:["Inflação e aumento do endividamento","Fim completo da inflação","Desaparecimento das desigualdades regionais","Eliminação de todos os déficits externos"],c:0,e:"O rápido processo de desenvolvimento veio acompanhado de problemas econômicos, incluindo inflação e aumento do endividamento."},
+ {cat:"Política",q:"Juscelino Kubitschek governou o Brasil em qual período?",a:["1956–1961","1945–1950","1961–1964","1950–1954"],c:0,e:"JK tomou posse em 31 de janeiro de 1956 e encerrou seu mandato em 31 de janeiro de 1961."},
+ {cat:"Revisão geral",q:"Qual conjunto reúne elementos associados ao governo JK?",a:["Plano de Metas, industrialização e Brasília","Plano Real, Constituição de 1988 e Mercosul","Diretas Já, Plano Cruzado e Constituição de 1967","Estado Novo, Petrobras e AI-5"],c:0,e:"Plano de Metas, industrialização, obras de infraestrutura e construção de Brasília são elementos centrais para estudar o governo JK."}
+];
+
+let current=0, score=0, answered=false, timer=null, timeLeft=20, results=[], currentQuestion=null;
+
+function startQuiz(){
+ current=0;score=0;results=[];answered=false;
+ document.getElementById('start').classList.add('hidden');
+ document.getElementById('result').classList.add('hidden');
+ document.getElementById('quiz').classList.remove('hidden');
+ loadQuestion();
+}
+function loadQuestion(){
+ clearInterval(timer); answered=false; timeLeft=20;
+ const original=questions[current];
+
+ // Embaralha as alternativas a cada nova tentativa/pergunta,
+ // mantendo internamente qual delas é a correta.
+ const shuffled = original.a.map((text,i)=>({text,correct:i===original.c}));
+ for(let i=shuffled.length-1;i>0;i--){
+   const j=Math.floor(Math.random()*(i+1));
+   [shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]];
+ }
+ const x={
+   ...original,
+   a:shuffled.map(o=>o.text),
+   c:shuffled.findIndex(o=>o.correct)
+ };
+
+ // Guarda a versão embaralhada para a função de resposta.
+ currentQuestion=x;
+
+ document.getElementById('counter').textContent=`Pergunta ${current+1}/${questions.length}`;
+ document.getElementById('score').textContent=`Pontos: ${score}`;
+ document.getElementById('timer').textContent=`⏱️ ${timeLeft}s`;
+ document.getElementById('timer').classList.remove('warning');
+ document.getElementById('progress').style.width=`${(current/questions.length)*100}%`;
+ document.getElementById('category').textContent=x.cat;
+ document.getElementById('question').textContent=x.q;
+ document.getElementById('feedback').classList.add('hidden');
+ document.getElementById('next').classList.add('hidden');
+
+ const box=document.getElementById('options');
+ box.innerHTML='';
+ x.a.forEach((text,i)=>{
+   const b=document.createElement('button');
+   b.className='option';
+   b.textContent=`${String.fromCharCode(65+i)}) ${text}`;
+   b.onclick=()=>answer(i,b);
+   box.appendChild(b);
+ });
+
+ timer=setInterval(()=>{
+   timeLeft--;
+   document.getElementById('timer').textContent=`⏱️ ${timeLeft}s`;
+   if(timeLeft<=5) document.getElementById('timer').classList.add('warning');
+   if(timeLeft<=0){clearInterval(timer); answer(-1,null);}
+ },1000);
+}
+
+function answer(i,btn){
+ if(answered)return; answered=true; clearInterval(timer);
+ const x=currentQuestion;
+ const buttons=document.querySelectorAll('.option');
+ buttons.forEach((b,j)=>{b.disabled=true;if(j===x.c)b.classList.add('correct')});
+ let ok=i===x.c;
+ if(i>=0 && i!==x.c)btn.classList.add('wrong');
+ if(ok){score+=10; if(timeLeft>=15)score+=5; document.getElementById('score').textContent=`Pontos: ${score}`;}
+ results.push(ok);
+ const fb=document.getElementById('feedback');
+ fb.textContent=(ok?"✅ Correto! ":"💡 Resposta correta: "+x.a[x.c]+". ")+x.e;
+ fb.classList.remove('hidden');
+ document.getElementById('next').textContent=current===questions.length-1?"VER RESULTADO 🏆":"PRÓXIMA PERGUNTA →";
+ document.getElementById('next').classList.remove('hidden');
+ document.getElementById('progress').style.width=`${((current+1)/questions.length)*100}%`;
+}
+function nextQuestion(){
+ if(current<questions.length-1){current++;loadQuestion();}else showResult();
+}
+function showResult(){
+ clearInterval(timer);
+ document.getElementById('quiz').classList.add('hidden');
+ document.getElementById('result').classList.remove('hidden');
+ const correct=results.filter(Boolean).length;
+ document.getElementById('finalScore').textContent=`${correct}/${questions.length}`;
+ let rank,msg;
+ if(correct===10){rank="🏆 Mestre de JK";msg="Excelente! Você dominou o conteúdo principal do governo JK."}
+ else if(correct>=8){rank="🥇 Especialista em História";msg="Muito bom! Você demonstrou um ótimo domínio do tema."}
+ else if(correct>=6){rank="🥈 Conhecedor de JK";msg="Bom resultado! Você já conhece vários aspectos do período."}
+ else if(correct>=4){rank="🥉 Aprendiz de História";msg="Você já tem uma base. Que tal revisar o conteúdo e tentar novamente?"}
+ else {rank="📚 Começando a jornada";msg="Use o quiz como revisão e tente novamente para acompanhar sua evolução."}
+ document.getElementById('rank').textContent=rank;
+ document.getElementById('message').textContent=msg;
+ document.getElementById('summary').innerHTML=`<strong>Resumo:</strong><br>Você acertou ${correct} de ${questions.length} perguntas. A pontuação considera os acertos e um bônus de velocidade nas respostas rápidas.<br><br><span class="small">Tema: Governo Juscelino Kubitschek (1956–1961).</span>`;
+ if(correct>=8)confetti();
+}
+function restartQuiz(){startQuiz();}
+function showStart(){
+ document.getElementById('result').classList.add('hidden');
+ document.getElementById('quiz').classList.add('hidden');
+ document.getElementById('start').classList.remove('hidden');
+}
+function confetti(){
+ const area=document.getElementById('confetti');
+ for(let i=0;i<100;i++){
+   const s=document.createElement('span');s.className='conf';
+   s.style.left=Math.random()*100+'vw';s.style.top='-20px';
+   s.style.animationDelay=Math.random()*0.8+'s';
+   s.style.background=['#f4b400','#088395','#e84a5f','#5cb85c'][Math.floor(Math.random()*4)];
+   area.appendChild(s); setTimeout(()=>s.remove(),3500);
+ }
+}
+</script>
+</body>
+</html>
